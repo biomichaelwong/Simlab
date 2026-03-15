@@ -6,6 +6,39 @@
     <title>HKDSE Biology: Blood Circulation Navigator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* --- 1. Standard CSS for the Back Button --- */
+        .back-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1000;
+            background-color: #e5e7eb; /* Light Gray */
+            color: #1f2937; /* Dark Gray Text */
+            font-weight: 700;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #d1d5db;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .back-btn:active {
+            transform: translateY(0);
+        }
+
+        /* --- 2. Existing Page Styles --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f4f8;
@@ -19,7 +52,7 @@
         h1 {
             color: #b51a1a; text-align: center; border-bottom: 2px solid #b51a1a;
             padding-bottom: 10px; margin-bottom: 20px; width: 100%; max-width: 1200px;
-            font-size: 1.875rem; font-weight: 700; /* Added to match Tailwind text-3xl */
+            margin-top: 40px; /* Added space for fixed button */
         }
         .main-container {
             display: flex; flex-wrap: wrap; gap: 20px; max-width: 1500px;
@@ -111,13 +144,11 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 p-4 font-sans text-gray-800">
+<body>
 
-    <button onclick="window.location.href='index.html'" 
-            style="position:fixed; top:10px; left:10px; z-index:1000;" 
-            class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded shadow">
+    <a href="index.html" class="back-btn">
         ⬅ Back to the Lab
-    </button>
+    </a>
 
     <h1 class="text-3xl font-bold">HKDSE Biology: Blood Circulation Navigator</h1>
     
@@ -155,7 +186,6 @@
     </div>
 
     <script>
-        // --- Original Circulation Script (Nodes, Edges, Logic) ---
         const nodes = {
             "Head & Arms": {x: 250, y: 60, w: 120, h: 40, type: 'organ', bg: '<path d="M-20,15 C-20,0 20,0 20,15 Z M0,5 C-15,-15 15,-15 0,5 Z" fill="#bdc3c7" opacity="0.5" transform="scale(2.0)" />'},
             "Lungs": {x: 250, y: 150, w: 120, h: 40, type: 'organ', bg: '<path d="M-25,15 C-40,-5 -15,-25 -5,-10 C-5,-5 -15,10 -25,15 Z M25,15 C40,-5 15,-25 5,-10 C5,-5 15,10 25,15 Z" fill="#ff7675" opacity="0.4" transform="scale(2.0)" />'},
@@ -262,6 +292,7 @@
             tooltip.style.top = (e.clientY - rect.top - 10) + 'px';
         }
         function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+        
         function findEdgePath(start, end) {
             let queue = [[ { node: start, edge: null } ]];
             let visited = new Set();
@@ -277,6 +308,7 @@
             }
             return null;
         }
+        
         function calcDistance(p1, p2) { return Math.hypot(p2[0] - p1[0], p2[1] - p1[1]); }
 
         function startNavigation() {
