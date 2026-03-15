@@ -31,6 +31,9 @@
               <path d="M 95 85 C 66 85, 46 112, 52 150 C 58 168, 84 163, 95 149 Z" fill="#fca5a5" opacity="0.9" />
               <path d="M 105 85 C 134 85, 154 112, 148 150 C 142 168, 116 163, 105 149 Z" fill="#fca5a5" opacity="0.9" />
             </g>
+            
+            <g id="particlesGroup"></g>
+
             <text x="100" y="126" text-anchor="middle" font-size="16" font-weight="bold" fill="#7f1d1d" opacity="0.8">肺部</text>
 
             <path id="diaphragm" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round" style="transition: all 0.1s linear;" />
@@ -42,10 +45,10 @@
         </div>
       </div>
 
-      <div class="lg:col-span-7 bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col">
-        <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center">壓力隨時間的變化</h2>
+      <div class="lg:col-span-7 bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col items-center">
+        <h2 class="text-2xl font-bold mb-4 text-gray-700 text-center w-full">壓力隨時間的變化</h2>
         
-        <div class="relative w-full flex-grow min-h-[480px] mb-4">
+        <div class="relative w-full max-w-lg mx-auto flex-grow min-h-[550px] mb-4">
           <canvas id="pressureChart"></canvas>
         </div>
 
@@ -85,13 +88,13 @@
           </ul>
         </div>
         <div>
-          <h4 class="font-bold text-blue-700 mb-2 text-lg">2. 事件順序（吸氣）</h4>
+          <h4 class="font-bold text-red-700 mb-2 text-lg">2. 事件順序（吸氣）</h4>
           <ol class="list-decimal pl-6 space-y-2">
             <li>肋間肌和橫膈膜肌肉<strong class="text-black">收縮</strong>。</li>
             <li>肋骨<strong class="text-black">向上及向外移</strong>，同時橫膈膜變得平坦，使胸腔<strong class="text-black">體積增加</strong>。</li>
             <li>胸膜腔內壓下降，將肺部向外拉。</li>
             <li>肺部<strong class="text-black">體積增加</strong>。</li>
-            <li>肺泡壓力降至<strong class="text-black">低於大氣壓力</strong>（藍線跌破 0）。</li>
+            <li>肺泡壓力降至<strong class="text-black">低於大氣壓力</strong>（深紅線跌破 0）。</li>
             <li>空氣順著壓力梯度被吸入肺部。</li>
           </ol>
         </div>
@@ -122,14 +125,14 @@
         const xAxis = chart.scales.x;
         const yAxis = chart.scales.y;
         ctx.save();
-        // Inhalation background (Blue)
+        // Inhalation background
         ctx.fillStyle = 'rgba(59, 130, 246, 0.06)';
         ctx.fillRect(xAxis.getPixelForValue(0), yAxis.top, xAxis.getPixelForValue(2) - xAxis.getPixelForValue(0), yAxis.bottom - yAxis.top);
-        // Exhalation background (Red)
+        // Exhalation background
         ctx.fillStyle = 'rgba(239, 68, 68, 0.06)';
         ctx.fillRect(xAxis.getPixelForValue(2), yAxis.top, xAxis.getPixelForValue(4) - xAxis.getPixelForValue(2), yAxis.bottom - yAxis.top);
         
-        // Atmospheric Pressure Line (0)
+        // Atmospheric Pressure Line
         const zeroY = yAxis.getPixelForValue(0);
         ctx.beginPath();
         ctx.moveTo(xAxis.left, zeroY);
@@ -159,7 +162,6 @@
     };
 
     const ctx = document.getElementById('pressureChart').getContext('2d');
-    
     Chart.defaults.font.size = 14;
 
     const chart = new Chart(ctx, {
@@ -170,7 +172,7 @@
           {
             label: '肺泡壓力 (Alveolar Pressure)',
             data: alveolarData,
-            borderColor: '#2563eb', // Changed to blue
+            borderColor: '#b91c1c', // Changed to deep red
             borderWidth: 4,
             pointRadius: 0,
             tension: 0.4
@@ -191,25 +193,18 @@
         animation: false,
         scales: {
           x: {
-            type: 'linear',
-            min: 0,
-            max: 4,
+            type: 'linear', min: 0, max: 4,
             title: { display: true, text: '時間 (秒)', font: { weight: 'bold', size: 16 } }
           },
           y: {
-            min: -10,
-            max: 2,
+            min: -10, max: 2,
             title: { display: true, text: '壓力 (毫米汞柱 mm Hg)', font: { weight: 'bold', size: 16 } }
           }
         },
         plugins: {
-          legend: { 
-            position: 'top',
-            labels: { font: { size: 14, weight: 'bold' } }
-          },
+          legend: { position: 'top', labels: { font: { size: 14, weight: 'bold' } } },
           tooltip: {
-            titleFont: { size: 16 },
-            bodyFont: { size: 14 },
+            titleFont: { size: 16 }, bodyFont: { size: 14 },
             callbacks: {
               title: (ctx) => `時間：${ctx[0].parsed.x.toFixed(2)} 秒`,
               label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} mm Hg`
@@ -220,21 +215,82 @@
       plugins: [customBackgroundAndLinePlugin]
     });
 
-    // --- 3. Animation Logic ---
+    // --- 3. Animation Logic & Particle System ---
     let time = 0;
     let isPlaying = true;
     let lastUpdate = performance.now();
     let animationId;
+    let particles = [];
 
     const lungs = document.getElementById('lungs');
     const diaphragm = document.getElementById('diaphragm');
     const leftRib = document.getElementById('leftRib');
     const rightRib = document.getElementById('rightRib');
+    const particlesGroup = document.getElementById('particlesGroup');
     const timeDisplay = document.getElementById('timeDisplay');
     const timeSlider = document.getElementById('timeSlider');
     const phaseText = document.getElementById('phaseText');
     const playBtn = document.getElementById('playBtn');
     const resetBtn = document.getElementById('resetBtn');
+
+    function manageParticles(delta) {
+      const isInhaling = time < 2;
+      
+      if (isPlaying && Math.random() < 0.35) {
+        const p = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        p.setAttribute("r", "2.5");
+        p.setAttribute("fill", isInhaling ? "#3b82f6" : "#6b7280"); 
+        particlesGroup.appendChild(p);
+
+        particles.push({
+          el: p,
+          progress: 0,
+          side: Math.random() > 0.5 ? 1 : -1,
+          isInhaling: isInhaling,
+          speed: 0.6 + Math.random() * 0.4 
+        });
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.progress += delta * p.speed * 1.5;
+
+        if (p.progress >= 1) {
+          p.el.remove();
+          particles.splice(i, 1);
+          continue;
+        }
+
+        let x, y, opacity;
+        let actualProgress = p.isInhaling ? p.progress : (1 - p.progress);
+
+        if (actualProgress < 0.6) {
+          let t = actualProgress / 0.6; 
+          x = 100 + (Math.random() * 6 - 3);
+          y = 15 + t * 65;
+          
+          if (p.isInhaling) {
+            opacity = t < 0.2 ? t * 5 : 1;
+          } else {
+            opacity = t < 0.2 ? t * 5 : 1;
+          }
+        } else {
+          let t = (actualProgress - 0.6) / 0.4; 
+          x = 100 + (t * 30 * p.side) + (Math.random() * 6 - 3);
+          y = 80 + (t * 35);
+          
+          if (p.isInhaling) {
+            opacity = 1 - t;
+          } else {
+            opacity = t;
+          }
+        }
+
+        p.el.setAttribute("cx", x);
+        p.el.setAttribute("cy", y);
+        p.el.setAttribute("opacity", Math.max(0, Math.min(1, opacity)));
+      }
+    }
 
     function updateSimulation() {
       const volumeFactor = (1 - Math.cos((Math.PI * time) / 2)) / 2;
@@ -282,6 +338,7 @@
       if (time >= 4) time = 0;
       
       updateSimulation();
+      manageParticles(delta);
       animationId = requestAnimationFrame(animate);
     }
 
@@ -301,6 +358,10 @@
       time = 0;
       isPlaying = false;
       playBtn.innerText = '▶';
+      
+      particlesGroup.innerHTML = '';
+      particles = [];
+
       cancelAnimationFrame(animationId);
       updateSimulation();
     });
@@ -309,11 +370,15 @@
       time = parseFloat(e.target.value);
       isPlaying = false;
       playBtn.innerText = '▶';
+      
+      particlesGroup.innerHTML = '';
+      particles = [];
+
       cancelAnimationFrame(animationId);
       updateSimulation();
     });
 
-    // Spacebar shortcut to play/pause
+    // Spacebar shortcut
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
         e.preventDefault(); 
